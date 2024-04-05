@@ -19,10 +19,10 @@ namespace libdebug {
         public string contentid;
     }
 
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
     /// <summary>
     /// Represents information about a thread.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
     public struct ThreadInfo {
         /// <summary>
         /// Process ID associated with the thread.
