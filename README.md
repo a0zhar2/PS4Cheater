@@ -1,11 +1,9 @@
-# libdebug (.NET Framework) library used for PS4Cheater
+# libdebug
+A Powerful .NET Framework C#-based Remote Debugging Library for the PS4 (Playstation 4) System... Which is used by the [PS4 Cheater](https://github.com/a0zhar2/PS4Cheater)
 
+---
 
-
-
-# Changelog
 ### Patches made on (2024-04-05)
-
   - Fixed Comment's
   - Fixed the comments for enum ScanCompareType
   - Fixed the comments for enum ScanValueType
