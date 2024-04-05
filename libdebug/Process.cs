@@ -20,55 +20,97 @@ namespace libdebug {
     }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
+    /// <summary>
+    /// Represents information about a thread.
+    /// </summary>
     public struct ThreadInfo {
+        /// <summary>
+        /// Process ID associated with the thread.
+        /// </summary>
         public int pid;
+        /// <summary>
+        /// Priority of the thread.
+        /// </summary>
         public int priority;
-
+        /// <summary>
+        /// Name of the thread.
+        /// </summary>
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
         public string name;
     }
-
+    /// <summary>
+    /// Represents a memory entry.
+    /// </summary>
     public class MemoryEntry {
+        /// <summary>
+        /// End address of the memory entry.
+        /// </summary>
         public ulong end;
+        /// <summary>
+        /// Name of the memory entry.
+        /// </summary>
         public string name;
+        /// <summary>
+        /// Offset of the memory entry.
+        /// </summary>
         public ulong offset;
+        /// <summary>
+        /// Protection of the memory entry.
+        /// </summary>
         public uint prot;
+        /// <summary>
+        /// Start address of the memory entry.
+        /// </summary>
         public ulong start;
     }
 
+    /// <summary>
+    /// Represents a process.
+    /// </summary>
     public class Process {
+        /// <summary>
+        /// Name of the process.
+        /// </summary>
         public string name;
+        /// <summary>
+        /// ID of the process.
+        /// </summary>
         public int pid;
 
         /// <summary>
-        /// Initializes Process class
+        /// Initializes Process class.
         /// </summary>
         /// <param name="name">Process name</param>
         /// <param name="pid">Process ID</param>
-        /// <returns></returns>
         public Process(string name, int pid) {
             this.name = name;
             this.pid = pid;
         }
 
+        /// <summary>
+        /// Returns a string representation of the process.
+        /// </summary>
+        /// <returns>A string containing the process ID and name</returns>
         public override string ToString() {
             return $"[{pid}] {name}";
         }
     }
 
     public class ProcessList {
-        public Process[] processes;
+        private Process[] processes;
 
         /// <summary>
-        /// Initializes ProcessList class
+        /// Initializes ProcessList class.
         /// </summary>
         /// <param name="number">Number of processes</param>
         /// <param name="names">Process names</param>
         /// <param name="pids">Process IDs</param>
-        /// <returns></returns>
         public ProcessList(int number, string[] names, int[] pids) {
+            // Initialize the array of processes
             processes = new Process[number];
+            // Iterate through each process and initialize it
             for (int i = 0; i < number; i++) {
+                // Initialize a process with the provided name and PID
                 processes[i] = new Process(names[i], pids[i]);
             }
         }
@@ -147,17 +189,18 @@ namespace libdebug {
         }
 
         /// <summary>
-        /// Finds a virtual memory entry based off size
+        /// Finds a virtual memory entry based off size.
         /// </summary>
         /// <param name="size">Virtual memory entry size</param>
-        /// <returns></returns>
+        /// <returns>The found memory entry, or null if not found</returns>
         public MemoryEntry FindEntry(ulong size) {
+            // Iterate through all virtual memory entries
             foreach (MemoryEntry entry in entries) {
-                if ((entry.start - entry.end) == size) {
+                // Check if the size of the entry matches the provided size
+                if ((entry.start - entry.end) == size) 
                     return entry;
-                }
             }
-
+            // Return null if no matching entry is found
             return null;
         }
     }
