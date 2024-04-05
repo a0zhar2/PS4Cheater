@@ -6,10 +6,9 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 
-namespace libdebug
-{
-    public partial class PS4DBG
-    {
+namespace libdebug {
+
+    public partial class PS4DBG {
         private Socket sock = null;
         private IPEndPoint enp = null;
 
@@ -24,6 +23,7 @@ namespace libdebug
 
         // some global values
         private const string LIBRARY_VERSION = "1.3";
+
         private const int PS4DBG_PORT = 744;
         private const int PS4DBG_DEBUG_PORT = 755;
         private const int NET_MAX_LENGTH = 0x20000; // 128kb
@@ -45,6 +45,7 @@ namespace libdebug
         //    uint8_t original;
         //};
         public static uint MAX_BREAKPOINTS = 10;
+
         public static uint MAX_WATCHPOINTS = 4;
 
         //  struct cmd_packet {
@@ -57,8 +58,8 @@ namespace libdebug
         //  __attribute__((packed));
         //  #define CMD_PACKET_SIZE 12
         private const int CMD_PACKET_SIZE = 12;
-        public enum CMDS : uint
-        {
+
+        public enum CMDS : uint {
             CMD_VERSION = 0xBD000001,
             CMD_EXT_FW_VERSION = 0xBD000500,
 
@@ -104,8 +105,7 @@ namespace libdebug
             CMD_CONSOLE_INFO = 0xBDDD0005,
         };
 
-        public enum CMD_STATUS : uint
-        {
+        public enum CMD_STATUS : uint {
             CMD_SUCCESS = 0x80000000,
             CMD_ERROR = 0xF0000001,
             CMD_TOO_MUCH_DATA = 0xF0000002,
@@ -115,16 +115,14 @@ namespace libdebug
         };
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        public struct CMDPacket
-        {
+        public struct CMDPacket {
             public uint magic;
             public uint cmd;
             public uint datalen;
         }
 
         // enums
-        public enum VM_PROTECTIONS : uint
-        {
+        public enum VM_PROTECTIONS : uint {
             VM_PROT_NONE = 0x00,
             VM_PROT_READ = 0x01,
             VM_PROT_WRITE = 0x02,
@@ -135,39 +133,37 @@ namespace libdebug
             VM_PROT_COPY = 0x10,
             VM_PROT_WANTS_COPY = 0x10
         };
-        public enum WATCHPT_LENGTH : uint
-        {
+
+        public enum WATCHPT_LENGTH : uint {
             DBREG_DR7_LEN_1 = 0x00,	/* 1 byte length */
             DBREG_DR7_LEN_2 = 0x01,
             DBREG_DR7_LEN_4 = 0x03,
             DBREG_DR7_LEN_8 = 0x02,
         };
-        public enum WATCHPT_BREAKTYPE : uint
-        {
+
+        public enum WATCHPT_BREAKTYPE : uint {
             DBREG_DR7_EXEC = 0x00,	/* break on execute       */
             DBREG_DR7_WRONLY = 0x01,	/* break on write         */
             DBREG_DR7_RDWR = 0x03,	/* break on read or write */
         };
 
         // General helper functions, make code cleaner
-        public static string ConvertASCII(byte[] data, int offset)
-        {
+        public static string ConvertASCII(byte[] data, int offset) {
             int length = Array.IndexOf<byte>(data, 0, offset) - offset;
-            if (length < 0)
-            {
+            if (length < 0) {
                 length = data.Length - offset;
             }
 
             return Encoding.ASCII.GetString(data, offset, length);
         }
-        public static byte[] SubArray(byte[] data, int offset, int length)
-        {
+
+        public static byte[] SubArray(byte[] data, int offset, int length) {
             byte[] bytes = new byte[length];
             Buffer.BlockCopy(data, offset, bytes, 0, length);
             return bytes;
         }
-        public static object GetObjectFromBytes(byte[] buffer, Type type)
-        {
+
+        public static object GetObjectFromBytes(byte[] buffer, Type type) {
             int size = Marshal.SizeOf(type);
 
             IntPtr ptr = Marshal.AllocHGlobal(size);
@@ -179,8 +175,8 @@ namespace libdebug
 
             return r;
         }
-        public static byte[] GetBytesFromObject(object obj)
-        {
+
+        public static byte[] GetBytesFromObject(object obj) {
             int size = Marshal.SizeOf(obj);
 
             byte[] bytes = new byte[size];
@@ -195,71 +191,74 @@ namespace libdebug
         }
 
         // General networking functions
-        private static IPAddress GetBroadcastAddress(IPAddress address, IPAddress subnetMask)
-        {
+        private static IPAddress GetBroadcastAddress(IPAddress address, IPAddress subnetMask) {
             byte[] ipAdressBytes = address.GetAddressBytes();
             byte[] subnetMaskBytes = subnetMask.GetAddressBytes();
 
             byte[] broadcastAddress = new byte[ipAdressBytes.Length];
-            for (int i = 0; i < broadcastAddress.Length; i++)
-            {
+            for (int i = 0; i < broadcastAddress.Length; i++) {
                 broadcastAddress[i] = (byte)(ipAdressBytes[i] | (subnetMaskBytes[i] ^ 255));
             }
 
             return new IPAddress(broadcastAddress);
         }
-        private void SendCMDPacket(CMDS cmd, int length, params object[] fields)
-        {
-            CMDPacket packet = new CMDPacket
-            {
+
+        private void SendCMDPacket(CMDS cmd, int length, params object[] fields) {
+            CMDPacket packet = new CMDPacket {
                 magic = CMD_PACKET_MAGIC,
-                cmd = (uint) cmd,
-                datalen = (uint) length
+                cmd = (uint)cmd,
+                datalen = (uint)length
             };
 
             byte[] data = null;
 
-            if (length > 0)
-            {
+            if (length > 0) {
                 MemoryStream rs = new MemoryStream();
-                foreach (object field in fields)
-                {
+                foreach (object field in fields) {
                     byte[] bytes = null;
 
-                    switch (field)
-                    {
+                    switch (field) {
                         case char c:
-                            bytes = new byte[1];
-                            bytes[0] = BitConverter.GetBytes(c)[0];
-                            break;
+                        bytes = new byte[1];
+                        bytes[0] = BitConverter.GetBytes(c)[0];
+                        break;
+
                         case byte b:
-                            bytes = new byte[1];
-                            bytes[0] = BitConverter.GetBytes(b)[0];
-                            break;
+                        bytes = new byte[1];
+                        bytes[0] = BitConverter.GetBytes(b)[0];
+                        break;
+
                         case short s:
-                            bytes = BitConverter.GetBytes(s);
-                            break;
+                        bytes = BitConverter.GetBytes(s);
+                        break;
+
                         case ushort us:
-                            bytes = BitConverter.GetBytes(us);
-                            break;
+                        bytes = BitConverter.GetBytes(us);
+                        break;
+
                         case int i:
-                            bytes = BitConverter.GetBytes(i);
-                            break;
+                        bytes = BitConverter.GetBytes(i);
+                        break;
+
                         case uint u:
-                            bytes = BitConverter.GetBytes(u);
-                            break;
+                        bytes = BitConverter.GetBytes(u);
+                        break;
+
                         case long l:
-                            bytes = BitConverter.GetBytes(l);
-                            break;
+                        bytes = BitConverter.GetBytes(l);
+                        break;
+
                         case ulong ul:
-                            bytes = BitConverter.GetBytes(ul);
-                            break;
+                        bytes = BitConverter.GetBytes(ul);
+                        break;
+
                         case byte[] ba:
-                            bytes = ba;
-                            break;
+                        bytes = ba;
+                        break;
                     }
 
-                    if (bytes != null) rs.Write(bytes, 0, bytes.Length);
+                    if (bytes != null)
+                        rs.Write(bytes, 0, bytes.Length);
                 }
 
                 data = rs.ToArray();
@@ -268,26 +267,21 @@ namespace libdebug
 
             SendData(GetBytesFromObject(packet), CMD_PACKET_SIZE);
 
-            if (data != null)
-            {
+            if (data != null) {
                 SendData(data, length);
             }
         }
-        private void SendData(byte[] data, int length)
-        {
+
+        private void SendData(byte[] data, int length) {
             int left = length;
             int offset = 0;
             int sent = 0;
 
-            while (left > 0)
-            {
-                if (left > NET_MAX_LENGTH)
-                {
+            while (left > 0) {
+                if (left > NET_MAX_LENGTH) {
                     byte[] bytes = SubArray(data, offset, NET_MAX_LENGTH);
                     sent = sock.Send(bytes, NET_MAX_LENGTH, SocketFlags.None);
-                }
-                else
-                {
+                } else {
                     byte[] bytes = SubArray(data, offset, left);
                     sent = sock.Send(bytes, left, SocketFlags.None);
                 }
@@ -296,15 +290,14 @@ namespace libdebug
                 left -= sent;
             }
         }
-        private byte[] ReceiveData(int length)
-        {
+
+        private byte[] ReceiveData(int length) {
             MemoryStream s = new MemoryStream();
 
             int left = length;
             int recv = 0;
             byte[] b = new byte[NET_MAX_LENGTH];
-            while (left > 0)
-            {
+            while (left > 0) {
                 // adhere to length
                 recv = sock.Receive(b, Math.Min(left, NET_MAX_LENGTH), SocketFlags.None);
                 s.Write(b, 0, recv);
@@ -318,44 +311,37 @@ namespace libdebug
 
             return data;
         }
-        private CMD_STATUS ReceiveStatus()
-        {
+
+        private CMD_STATUS ReceiveStatus() {
             byte[] status = new byte[4];
             sock.Receive(status, 4, SocketFlags.None);
             return (CMD_STATUS)BitConverter.ToUInt32(status, 0);
         }
-        private void CheckStatus(string str="")
-        {
+
+        private void CheckStatus(string str = "") {
             CMD_STATUS status = ReceiveStatus();
-            if (status != CMD_STATUS.CMD_SUCCESS)
-            {
+            if (status != CMD_STATUS.CMD_SUCCESS) {
                 throw new Exception("libdbg status " + ((uint)status).ToString("X") + " " + str);
             }
         }
 
-        private void CheckConnected()
-        {
-            if (!IsConnected)
-            {
+        private void CheckConnected() {
+            if (!IsConnected) {
                 throw new Exception("libdbg: not connected");
             }
         }
-        private void CheckDebugging()
-        {
-            if (!IsDebugging)
-            {
+
+        private void CheckDebugging() {
+            if (!IsDebugging) {
                 throw new Exception("libdbg: not debugging");
             }
         }
-
-
 
         /// <summary>
         /// Initializes PS4DBG class
         /// </summary>
         /// <param name="addr">PlayStation 4 address</param>
-        public PS4DBG(IPAddress addr)
-        {
+        public PS4DBG(IPAddress addr) {
             enp = new IPEndPoint(addr, PS4DBG_PORT);
             sock = new Socket(enp.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
         }
@@ -364,15 +350,11 @@ namespace libdebug
         /// Initializes PS4DBG class
         /// </summary>
         /// <param name="ip">PlayStation 4 ip address</param>
-        public PS4DBG(string ip)
-        {
+        public PS4DBG(string ip) {
             IPAddress addr = null;
-            try
-            {
+            try {
                 addr = IPAddress.Parse(ip);
-            }
-            catch (FormatException ex)
-            {
+            } catch (FormatException ex) {
                 throw ex;
             }
 
@@ -383,8 +365,7 @@ namespace libdebug
         /// <summary>
         /// Find the playstation ip
         /// </summary>
-        public static string FindPlayStation(int timeout = 100, string subnet_mask = "255.255.255.0")
-        {
+        public static string FindPlayStation(int timeout = 100, string subnet_mask = "255.255.255.0") {
             UdpClient uc = new UdpClient();
             IPEndPoint server = new IPEndPoint(IPAddress.Any, 0);
             uc.EnableBroadcast = true;
@@ -394,21 +375,16 @@ namespace libdebug
 
             IPAddress addr = null;
             IPHostEntry host = Dns.GetHostEntry(Dns.GetHostName());
-            foreach (IPAddress ip in host.AddressList)
-            {
-                if (ip.AddressFamily == AddressFamily.InterNetwork)
-                {
+            foreach (IPAddress ip in host.AddressList) {
+                if (ip.AddressFamily == AddressFamily.InterNetwork) {
                     addr = ip;
-                    try
-                    {
+                    try {
                         uc.Send(magic, magic.Length, new IPEndPoint(GetBroadcastAddress(addr, IPAddress.Parse(subnet_mask)), BROADCAST_PORT));
 
                         byte[] resp = uc.Receive(ref server);
                         if (BitConverter.ToUInt32(resp, 0) == BROADCAST_MAGIC)
                             return server.Address.ToString();
-                    }
-                    catch (Exception ex)
-                    {
+                    } catch (Exception ex) {
                         Console.WriteLine("Wrong IP, trying next one...");
                     }
                 }
@@ -420,10 +396,8 @@ namespace libdebug
         /// <summary>
         /// Connects to PlayStation 4
         /// </summary>
-        public bool Connect()
-        {
-            if (!IsConnected)
-            {
+        public bool Connect() {
+            if (!IsConnected) {
                 sock.NoDelay = true;
                 sock.ReceiveBufferSize = NET_MAX_LENGTH;
                 sock.SendBufferSize = NET_MAX_LENGTH;
@@ -431,14 +405,11 @@ namespace libdebug
 
                 sock.ReceiveTimeout = 1000 * 10;
 
-                try
-                {
+                try {
                     sock.Connect(enp);
                     IsConnected = true;
                     Console.WriteLine("Connected!");
-                }
-                catch (Exception ex)
-                {
+                } catch (Exception ex) {
                     Console.WriteLine(ex.ToString());
                     return false;
                 }
@@ -449,16 +420,12 @@ namespace libdebug
         /// <summary>
         /// Disconnects from PlayStation 4
         /// </summary>
-        public bool Disconnect()
-        {
+        public bool Disconnect() {
             SendCMDPacket(CMDS.CMD_CONSOLE_END, 0);
-            try
-            {
+            try {
                 sock.Shutdown(SocketShutdown.Both);
                 sock.Close();
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception ex) {
                 Console.WriteLine(ex.ToString());
                 return false;
             }
@@ -469,16 +436,14 @@ namespace libdebug
         /// <summary>
         /// Get current ps4debug version from library
         /// </summary>
-        public string GetLibraryDebugVersion()
-        {
+        public string GetLibraryDebugVersion() {
             return LIBRARY_VERSION;
         }
 
         /// <summary>
         /// Get the current ps4debug version from console
         /// </summary>
-        public string GetConsoleDebugVersion()
-        {
+        public string GetConsoleDebugVersion() {
             if (Version != "")
                 return Version;
 

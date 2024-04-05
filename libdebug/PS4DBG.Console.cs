@@ -1,23 +1,22 @@
 using System.Text;
 
-namespace libdebug
-{
-    public partial class PS4DBG
-    {   
+namespace libdebug {
+
+    public partial class PS4DBG {
+
         //console
         // packet sizes
         // send size
         private const int CMD_CONSOLE_PRINT_PACKET_SIZE = 4;
-        private const int CMD_CONSOLE_NOTIFY_PACKET_SIZE = 8;
 
+        private const int CMD_CONSOLE_NOTIFY_PACKET_SIZE = 8;
 
         // console
         // note: the disconnect command actually uses the console api to end the connection
         /// <summary>
         /// Reboot console
         /// </summary>
-        public void Reboot()
-        {
+        public void Reboot() {
             CheckConnected();
 
             SendCMDPacket(CMDS.CMD_CONSOLE_REBOOT, 0);
@@ -27,8 +26,7 @@ namespace libdebug
         /// <summary>
         /// Print to serial port
         /// </summary>
-        public void Print(string str)
-        {
+        public void Print(string str) {
             CheckConnected();
 
             string raw = str + "\0";
@@ -41,8 +39,7 @@ namespace libdebug
         /// <summary>
         /// Notify console
         /// </summary>
-        public void Notify(int messageType, string message)
-        {
+        public void Notify(int messageType, string message) {
             CheckConnected();
 
             string raw = message + "\0";
@@ -55,8 +52,7 @@ namespace libdebug
         /// <summary>
         /// Console information
         /// </summary>
-        public void GetConsoleInformation()
-        {
+        public void GetConsoleInformation() {
             CheckConnected();
 
             SendCMDPacket(CMDS.CMD_CONSOLE_INFO, 0);

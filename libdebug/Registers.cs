@@ -1,10 +1,9 @@
 using System.Runtime.InteropServices;
 
-namespace libdebug
-{
+namespace libdebug {
+
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct regs
-    {
+    public struct regs {
         public ulong r_r15;
         public ulong r_r14;
         public ulong r_r13;
@@ -34,8 +33,7 @@ namespace libdebug
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct envxmm
-    {
+    public struct envxmm {
         public ushort en_cw; /* control word (16bits) */
         public ushort en_sw; /* status word (16bits) */
         public byte en_tw; /* tag word (8bits) */
@@ -48,8 +46,8 @@ namespace libdebug
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct acc
-    {
+    public struct acc {
+
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 10)]
         public byte[] fp_bytes;
 
@@ -58,53 +56,56 @@ namespace libdebug
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct xmmacc
-    {
+    public struct xmmacc {
+
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
         public byte[] xmm_bytes;
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct ymmacc
-    {
+    public struct ymmacc {
+
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
         public byte[] ymm_bytes;
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct xstate_hdr
-    {
+    public struct xstate_hdr {
         public ulong xstate_bv;
+
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
         private byte[] xstate_rsrv0;
+
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 40)]
         private byte[] xstate_rsrv;
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct savefpu_xstate
-    {
+    public struct savefpu_xstate {
         public xstate_hdr sx_hd;
+
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
         public ymmacc[] sx_ymm;
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 64)]
-    public struct fpregs
-    {
+    public struct fpregs {
         public envxmm svn_env;
+
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
         public acc[] sv_fp;
+
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
         public xmmacc[] sv_xmm;
+
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 96)]
         private byte[] sv_pad;
+
         public savefpu_xstate sv_xstate;
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct dbregs
-    {
+    public struct dbregs {
         public ulong dr0;
         public ulong dr1;
         public ulong dr2;
