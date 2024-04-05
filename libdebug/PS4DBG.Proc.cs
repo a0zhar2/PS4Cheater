@@ -35,41 +35,89 @@ namespace libdebug {
 
         private const int PROC_MAP_ENTRY_SIZE = 58;
         private const int PROC_PROC_INFO_SIZE = 188;
-        
+
         /// <summary>
         /// Different types of comparisons during memory scans
         /// </summary>
         public enum ScanCompareType : byte {
-            ExactValue,      // Compare for exact value
-            FuzzyValue,      // Compare for fuzzy value
-            BiggerThan,      // Compare for value greater than a specified value
-            SmallerThan,     // Compare for value smaller than a specified value
-            ValueBetween,    // Compare for value within a specified range
-            IncreasedValue,  // Compare for increased value
-            IncreasedValueBy,// Compare for increased value by a specified amount
-            DecreasedValue,  // Compare for decreased value
-            DecreasedValueBy,// Compare for decreased value by a specified amount
-            ChangedValue,    // Compare for changed value
-            UnchangedValue,  // Compare for unchanged value
-            UnknownInitialValue // Compare for unknown initial value
+
+            /// <summary>Compare for exact value</summary>
+            ExactValue = 0,
+
+            /// <summary>Compare for fuzzy value</summary>
+            FuzzyValue,
+
+            /// <summary>Compare for value greater than a specified value</summary>
+            BiggerThan,
+
+            /// <summary>Compare for value smaller than a specified value</summary>
+            SmallerThan,
+
+            /// <summary>Compare for value within a specified range</summary>
+            ValueBetween,
+
+            /// <summary>Compare for increased value</summary>
+            IncreasedValue,
+
+            /// <summary>Compare for increased value by a specified amount</summary>
+            IncreasedValueBy,
+
+            /// <summary>Compare for decreased value</summary>
+            DecreasedValue,
+
+            /// <summary>Compare for decreased value by a specified amount</summary>
+            DecreasedValueBy,
+
+            /// <summary>Compare for changed value</summary>
+            ChangedValue,
+
+            /// <summary>Compare for unchanged value</summary>
+            UnchangedValue,
+
+            /// <summary>Compare for unknown initial value</summary>
+            UnknownInitialValue
         }
-        
+
         /// <summary>
         /// Different types of values during memory scans
         /// </summary>
         public enum ScanValueType : byte {
-            valTypeUInt8,    // Unsigned 8-bit integer value
-            valTypeInt8,     // Signed 8-bit integer value
-            valTypeUInt16,   // Unsigned 16-bit integer value
-            valTypeInt16,    // Signed 16-bit integer value
-            valTypeUInt32,   // Unsigned 32-bit integer value
-            valTypeInt32,    // Signed 32-bit integer value
-            valTypeUInt64,   // Unsigned 64-bit integer value
-            valTypeInt64,    // Signed 64-bit integer value
-            valTypeFloat,    // Floating point value
-            valTypeDouble,   // Double precision floating point value
-            valTypeArrBytes, // Array of bytes value
-            valTypeString    // String value
+
+            /// <summary>Unsigned 8-bit integer value</summary>
+            valTypeUInt8 = 0,
+
+            /// <summary>Signed 8-bit integer value</summary>
+            valTypeInt8,
+
+            /// <summary>Unsigned 16-bit integer value</summary>
+            valTypeUInt16,
+
+            /// <summary>Signed 16-bit integer value</summary>
+            valTypeInt16,
+
+            /// <summary>Unsigned 32-bit integer value</summary>
+            valTypeUInt32,
+
+            /// <summary>Signed 32-bit integer value</summary>
+            valTypeInt32,
+
+            /// <summary>Unsigned 64-bit integer value</summary>
+            valTypeUInt64,
+
+            /// <summary>Signed 64-bit integer value</summary>
+            valTypeInt64,
+
+            /// <summary>Floating point value</summary>
+            valTypeFloat,
+
+            /// <summary>Double precision floating point value</summary>
+            valTypeDouble,
+
+            /// <summary>Array of bytes value</summary>
+            valTypeArrBytes,
+
+            /// <summary>String value</summary>
+            valTypeString
         }
 
         /// <summary>
