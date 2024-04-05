@@ -2,6 +2,40 @@ using System.Runtime.InteropServices;
 
 namespace libdebug {
 
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
+    public struct ProcessInfo {
+        public int pid;
+
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 40)]
+        public string name;
+
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)]
+        public string path;
+
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 16)]
+        public string titleid;
+
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)]
+        public string contentid;
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
+    public struct ThreadInfo {
+        public int pid;
+        public int priority;
+
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
+        public string name;
+    }
+
+    public class MemoryEntry {
+        public ulong end;
+        public string name;
+        public ulong offset;
+        public uint prot;
+        public ulong start;
+    }
+
     public class Process {
         public string name;
         public int pid;
@@ -46,34 +80,32 @@ namespace libdebug {
         /// <param name="contains">Condition to check if process name contains name</param>
         /// <returns></returns>
         public Process FindProcess(string name, bool contains = false) {
+            // Iterate trough all the individual processes stored inside the
+            // <processes> process list, until either a process whose name
+            // contains the or is equal to the value of <name> is found
             foreach (Process p in processes) {
                 if (contains) {
-                    if (p.name.Contains(name)) {
+                    // If the name of the current process selected from the
+                    // process list, contains the value specified by <name>
+                    // then return it
+                    if (p.name.Contains(name)) 
                         return p;
-                    }
                 } else {
-                    if (p.name == name) {
+                    // If the current process selected from the process list
+                    // name is the same as that specified by <name> then
+                    // return it.
+                    if (p.name == name)
                         return p;
-                    }
                 }
             }
-
+            // Return null if no process whose name contains the/is equal to
+            // the value specified by <name>
             return null;
         }
     }
-
-    public class MemoryEntry {
-        public string name;
-        public ulong start;
-        public ulong end;
-        public ulong offset;
-        public uint prot;
-    }
-
     public class ProcessMap {
-        public int pid;
         public MemoryEntry[] entries;
-
+        public int pid;
         /// <summary>
         /// Initializes ProcessMap class with memory entries and process ID
         /// </summary>
@@ -121,31 +153,5 @@ namespace libdebug {
 
             return null;
         }
-    }
-
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
-    public struct ProcessInfo {
-        public int pid;
-
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 40)]
-        public string name;
-
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)]
-        public string path;
-
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 16)]
-        public string titleid;
-
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)]
-        public string contentid;
-    }
-
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
-    public struct ThreadInfo {
-        public int pid;
-        public int priority;
-
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-        public string name;
     }
 }
