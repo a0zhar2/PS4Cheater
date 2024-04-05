@@ -8,7 +8,6 @@ using System.Text;
 namespace libdebug {
 
     public partial class PS4DBG {
-
         private const int CMD_PROC_ALLOC_PACKET_SIZE = 8;
         private const int CMD_PROC_CALL_PACKET_SIZE = 68;
         private const int CMD_PROC_ELF_PACKET_SIZE = 8;
@@ -36,34 +35,41 @@ namespace libdebug {
 
         private const int PROC_MAP_ENTRY_SIZE = 58;
         private const int PROC_PROC_INFO_SIZE = 188;
+        
+        /// <summary>
+        /// Different types of comparisons during memory scans
+        /// </summary>
         public enum ScanCompareType : byte {
-            ExactValue = 0,
-            FuzzyValue,
-            BiggerThan,
-            SmallerThan,
-            ValueBetween,
-            IncreasedValue,
-            IncreasedValueBy,
-            DecreasedValue,
-            DecreasedValueBy,
-            ChangedValue,
-            UnchangedValue,
-            UnknownInitialValue
+            ExactValue,      // Compare for exact value
+            FuzzyValue,      // Compare for fuzzy value
+            BiggerThan,      // Compare for value greater than a specified value
+            SmallerThan,     // Compare for value smaller than a specified value
+            ValueBetween,    // Compare for value within a specified range
+            IncreasedValue,  // Compare for increased value
+            IncreasedValueBy,// Compare for increased value by a specified amount
+            DecreasedValue,  // Compare for decreased value
+            DecreasedValueBy,// Compare for decreased value by a specified amount
+            ChangedValue,    // Compare for changed value
+            UnchangedValue,  // Compare for unchanged value
+            UnknownInitialValue // Compare for unknown initial value
         }
-
+        
+        /// <summary>
+        /// Different types of values during memory scans
+        /// </summary>
         public enum ScanValueType : byte {
-            valTypeUInt8 = 0,
-            valTypeInt8,
-            valTypeUInt16,
-            valTypeInt16,
-            valTypeUInt32,
-            valTypeInt32,
-            valTypeUInt64,
-            valTypeInt64,
-            valTypeFloat,
-            valTypeDouble,
-            valTypeArrBytes,
-            valTypeString
+            valTypeUInt8,    // Unsigned 8-bit integer value
+            valTypeInt8,     // Signed 8-bit integer value
+            valTypeUInt16,   // Unsigned 16-bit integer value
+            valTypeInt16,    // Signed 16-bit integer value
+            valTypeUInt32,   // Unsigned 32-bit integer value
+            valTypeInt32,    // Signed 32-bit integer value
+            valTypeUInt64,   // Unsigned 64-bit integer value
+            valTypeInt64,    // Signed 64-bit integer value
+            valTypeFloat,    // Floating point value
+            valTypeDouble,   // Double precision floating point value
+            valTypeArrBytes, // Array of bytes value
+            valTypeString    // String value
         }
 
         /// <summary>
@@ -541,6 +547,7 @@ namespace libdebug {
             SendData(data, data.Length);
             CheckStatus();
         }
+
         public void WriteMemory<T>(int pid, ulong address, T value) {
             if (typeof(T) == typeof(string)) {
                 WriteMemory(pid, address, Encoding.ASCII.GetBytes((string)(object)value + (char)0x0));
