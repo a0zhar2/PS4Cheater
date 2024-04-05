@@ -1,8 +1,9 @@
-# libdebug
-A Powerful Remote Debugging Library for the PlayStation 4 System! Used By PS4 Cheater
+# libdebug (.NET Framework) library used for PS4Cheater
 
----
 
+
+
+# Changelog
 ### Patches made on (2024-04-05)
 
   - Fixed Comment's
