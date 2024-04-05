@@ -124,18 +124,25 @@ namespace libdebug {
         /// <param name="contains">Condition to check if entry name contains name</param>
         /// <returns></returns>
         public MemoryEntry FindEntry(string name, bool contains = false) {
+            // Iterate trough the individual virtual memory entries stored
+            // inside of <entries>, until a entry whose name contains or
+            // is equal to the value of <name> is found
             foreach (MemoryEntry entry in entries) {
                 if (contains) {
-                    if (entry.name.Contains(name)) {
+                    // If the current entry's name contains the specified
+                    // value of <name>, then return that entry
+                    if (entry.name.Contains(name)) 
                         return entry;
-                    }
                 } else {
-                    if (entry.name == name) {
+                    // If the current entry's name is equal to the value
+                    // specified by <name>, then return that entry
+                    if (entry.name == name) 
                         return entry;
-                    }
                 }
             }
 
+            // Return null if no entry whose name either contains or is
+            // equal to the value specified by <name>
             return null;
         }
 
