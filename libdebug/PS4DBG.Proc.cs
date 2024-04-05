@@ -9,138 +9,75 @@ namespace libdebug {
 
     public partial class PS4DBG {
 
+        private const int CMD_PROC_ALLOC_PACKET_SIZE = 8;
+        private const int CMD_PROC_CALL_PACKET_SIZE = 68;
+        private const int CMD_PROC_ELF_PACKET_SIZE = 8;
+        private const int CMD_PROC_FREE_PACKET_SIZE = 16;
+        private const int CMD_PROC_INFO_PACKET_SIZE = 4;
+        private const int CMD_PROC_INSTALL_PACKET_SIZE = 4;
+        private const int CMD_PROC_MAPS_PACKET_SIZE = 4;
+        private const int CMD_PROC_PROTECT_PACKET_SIZE = 20;
+
         //proc
         // packet sizes
         // send size
         private const int CMD_PROC_READ_PACKET_SIZE = 16;
 
-        private const int CMD_PROC_WRITE_PACKET_SIZE = 16;
-        private const int CMD_PROC_MAPS_PACKET_SIZE = 4;
-        private const int CMD_PROC_INSTALL_PACKET_SIZE = 4;
-        private const int CMD_PROC_CALL_PACKET_SIZE = 68;
-        private const int CMD_PROC_ELF_PACKET_SIZE = 8;
-        private const int CMD_PROC_PROTECT_PACKET_SIZE = 20;
         private const int CMD_PROC_SCAN_PACKET_SIZE = 10;
-        private const int CMD_PROC_INFO_PACKET_SIZE = 4;
-        private const int CMD_PROC_ALLOC_PACKET_SIZE = 8;
-        private const int CMD_PROC_FREE_PACKET_SIZE = 16;
+        private const int CMD_PROC_WRITE_PACKET_SIZE = 16;
+        private const int PROC_ALLOC_SIZE = 8;
+
+        private const int PROC_CALL_SIZE = 12;
+
+        private const int PROC_INSTALL_SIZE = 8;
 
         // receive size
         private const int PROC_LIST_ENTRY_SIZE = 36;
 
         private const int PROC_MAP_ENTRY_SIZE = 58;
-        private const int PROC_INSTALL_SIZE = 8;
-        private const int PROC_CALL_SIZE = 12;
         private const int PROC_PROC_INFO_SIZE = 188;
-        private const int PROC_ALLOC_SIZE = 8;
+        public enum ScanCompareType : byte {
+            ExactValue = 0,
+            FuzzyValue,
+            BiggerThan,
+            SmallerThan,
+            ValueBetween,
+            IncreasedValue,
+            IncreasedValueBy,
+            DecreasedValue,
+            DecreasedValueBy,
+            ChangedValue,
+            UnchangedValue,
+            UnknownInitialValue
+        }
 
-        /// <summary>
-        /// Get current process list
-        /// </summary>
-        /// <returns></returns>
-        public ProcessList GetProcessList() {
-            CheckConnected();
-
-            SendCMDPacket(CMDS.CMD_PROC_LIST, 0);
-            CheckStatus();
-
-            // recv count
-            byte[] bytes = new byte[4];
-            sock.Receive(bytes, 4, SocketFlags.None);
-            int number = BitConverter.ToInt32(bytes, 0);
-
-            // recv data
-            byte[] data = ReceiveData(number * PROC_LIST_ENTRY_SIZE);
-
-            // parse data
-            string[] names = new string[number];
-            int[] pids = new int[number];
-            for (int i = 0; i < number; i++) {
-                int offset = i * PROC_LIST_ENTRY_SIZE;
-                names[i] = ConvertASCII(data, offset);
-                pids[i] = BitConverter.ToInt32(data, offset + 32);
-            }
-
-            return new ProcessList(number, names, pids);
+        public enum ScanValueType : byte {
+            valTypeUInt8 = 0,
+            valTypeInt8,
+            valTypeUInt16,
+            valTypeInt16,
+            valTypeUInt32,
+            valTypeInt32,
+            valTypeUInt64,
+            valTypeInt64,
+            valTypeFloat,
+            valTypeDouble,
+            valTypeArrBytes,
+            valTypeString
         }
 
         /// <summary>
-        /// Read memory
+        /// Allocate RWX memory in the process space
         /// </summary>
         /// <param name="pid">Process ID</param>
-        /// <param name="address">Memory address</param>
-        /// <param name="length">Data length</param>
+        /// <param name="length">Size of memory allocation</param>
         /// <returns></returns>
-        public byte[] ReadMemory(int pid, ulong address, int length) {
+        public ulong AllocateMemory(int pid, int length) {
             CheckConnected();
 
-            SendCMDPacket(CMDS.CMD_PROC_READ, CMD_PROC_READ_PACKET_SIZE, pid, address, length);
+            SendCMDPacket(CMDS.CMD_PROC_ALLOC, CMD_PROC_ALLOC_PACKET_SIZE, pid, length);
             CheckStatus();
-            return ReceiveData(length);
-        }
-
-        /// <summary>
-        /// Write memory
-        /// </summary>
-        /// <param name="pid">Process ID</param>
-        /// <param name="address">Memory address</param>
-        /// <param name="data">Data</param>
-        public void WriteMemory(int pid, ulong address, byte[] data) {
-            CheckConnected();
-
-            SendCMDPacket(CMDS.CMD_PROC_WRITE, CMD_PROC_WRITE_PACKET_SIZE, pid, address, data.Length);
-            CheckStatus();
-            SendData(data, data.Length);
-            CheckStatus();
-        }
-
-        /// <summary>
-        /// Get process memory maps
-        /// </summary>
-        /// <param name="pid">Process ID</param>
-        /// <returns></returns>
-        public ProcessMap GetProcessMaps(int pid) {
-            CheckConnected();
-
-            SendCMDPacket(CMDS.CMD_PROC_MAPS, CMD_PROC_MAPS_PACKET_SIZE, pid);
-            CheckStatus();
-
-            // recv count
-            byte[] bnumber = new byte[4];
-            sock.Receive(bnumber, 4, SocketFlags.None);
-            int number = BitConverter.ToInt32(bnumber, 0);
-
-            // recv data
-            byte[] data = ReceiveData(number * PROC_MAP_ENTRY_SIZE);
-
-            // parse data
-            MemoryEntry[] entries = new MemoryEntry[number];
-            for (int i = 0; i < number; i++) {
-                int offset = i * PROC_MAP_ENTRY_SIZE;
-                entries[i] = new MemoryEntry {
-                    name = ConvertASCII(data, offset),
-                    start = BitConverter.ToUInt64(data, offset + 32),
-                    end = BitConverter.ToUInt64(data, offset + 40),
-                    offset = BitConverter.ToUInt64(data, offset + 48),
-                    prot = BitConverter.ToUInt16(data, offset + 56)
-                };
-            }
-
-            return new ProcessMap(pid, entries);
-        }
-
-        /// <summary>
-        /// Install RPC into a process, this returns a stub address that you should pass into call functions
-        /// </summary>
-        /// <param name="pid">Process ID</param>
-        /// <returns></returns>
-        public ulong InstallRPC(int pid) {
-            CheckConnected();
-
-            SendCMDPacket(CMDS.CMD_PROC_INTALL, CMD_PROC_INSTALL_PACKET_SIZE, pid);
-            CheckStatus();
-
-            return BitConverter.ToUInt64(ReceiveData(PROC_INSTALL_SIZE), 0);
+            return BitConverter.ToUInt64(ReceiveData(PROC_ALLOC_SIZE), 0);
         }
 
         /// <summary>
@@ -256,6 +193,138 @@ namespace libdebug {
         }
 
         /// <summary>
+        /// Changes protection on pages in range
+        /// </summary>
+        /// <param name="pid">Process ID</param>
+        /// <param name="address">Address</param>
+        /// <param name="length">Length</param>
+        /// <param name="newprot">New protection</param>
+        /// <returns></returns>
+        public void ChangeProtection(int pid, ulong address, uint length, VM_PROTECTIONS newProt) {
+            CheckConnected();
+
+            SendCMDPacket(CMDS.CMD_PROC_PROTECT, CMD_PROC_PROTECT_PACKET_SIZE, pid, address, length, (uint)newProt);
+            CheckStatus();
+        }
+
+        /// <summary>
+        /// Free memory in the process space
+        /// </summary>
+        /// <param name="pid">Process ID</param>
+        /// <param name="address">Address of the memory allocation</param>
+        /// <param name="length">Size of memory allocation</param>
+        /// <returns></returns>
+        public void FreeMemory(int pid, ulong address, int length) {
+            CheckConnected();
+
+            SendCMDPacket(CMDS.CMD_PROC_FREE, CMD_PROC_FREE_PACKET_SIZE, pid, address, length);
+            CheckStatus();
+        }
+
+        /// <summary>
+        /// Get process information
+        /// </summary>
+        /// <param name="pid">Process ID</param>
+        /// <returns></returns>
+        public ProcessInfo GetProcessInfo(int pid) {
+            CheckConnected();
+
+            SendCMDPacket(CMDS.CMD_PROC_INFO, CMD_PROC_INFO_PACKET_SIZE, pid);
+            CheckStatus();
+
+            byte[] data = ReceiveData(PROC_PROC_INFO_SIZE);
+            return (ProcessInfo)GetObjectFromBytes(data, typeof(ProcessInfo));
+        }
+
+        /// <summary>
+        /// Get current process list
+        /// </summary>
+        /// <returns>A ProcessList object containing process names and IDs</returns>
+        public ProcessList GetProcessList() {
+            CheckConnected();
+
+            // Send command packet to request process list
+            SendCMDPacket(CMDS.CMD_PROC_LIST, 0);
+            CheckStatus();
+
+            // Receive the count of processes
+            byte[] countBytes = new byte[4];
+            sock.Receive(countBytes, 4, SocketFlags.None);
+            int number = BitConverter.ToInt32(countBytes, 0);
+
+            // Receive data containing process names and IDs
+            byte[] processData = ReceiveData(number * PROC_LIST_ENTRY_SIZE);
+
+            // Array for Process Names
+            string[] names = new string[number];
+            // Array for Process IDs
+            int[] pids = new int[number];
+
+            // Begin Parsing process data, adding each one to both
+            // the names array and pids array
+            for (int i = 0; i < number; i++) {
+                int offset = i * PROC_LIST_ENTRY_SIZE;
+                // Save the Name of the Current Selected Process
+                names[i] = ConvertASCII(processData, offset);
+
+                // Save the Process ID of the Current Selected Process
+                pids[i] = BitConverter.ToInt32(processData, offset + 32);
+            }
+
+            // Return a new ProcessList object
+            return new ProcessList(number, names, pids);
+        }
+
+        /// <summary>
+        /// Get process memory maps
+        /// </summary>
+        /// <param name="pid">Process ID</param>
+        /// <returns></returns>
+        public ProcessMap GetProcessMaps(int pid) {
+            CheckConnected();
+
+            SendCMDPacket(CMDS.CMD_PROC_MAPS, CMD_PROC_MAPS_PACKET_SIZE, pid);
+            CheckStatus();
+
+            // recv count
+            byte[] bnumber = new byte[4];
+            sock.Receive(bnumber, 4, SocketFlags.None);
+            int number = BitConverter.ToInt32(bnumber, 0);
+
+            // recv data
+            byte[] data = ReceiveData(number * PROC_MAP_ENTRY_SIZE);
+
+            // parse data
+            MemoryEntry[] entries = new MemoryEntry[number];
+            for (int i = 0; i < number; i++) {
+                int offset = i * PROC_MAP_ENTRY_SIZE;
+                entries[i] = new MemoryEntry {
+                    name = ConvertASCII(data, offset),
+                    start = BitConverter.ToUInt64(data, offset + 32),
+                    end = BitConverter.ToUInt64(data, offset + 40),
+                    offset = BitConverter.ToUInt64(data, offset + 48),
+                    prot = BitConverter.ToUInt16(data, offset + 56)
+                };
+            }
+
+            return new ProcessMap(pid, entries);
+        }
+
+        /// <summary>
+        /// Install RPC into a process, this returns a stub address that you should pass into call functions
+        /// </summary>
+        /// <param name="pid">Process ID</param>
+        /// <returns></returns>
+        public ulong InstallRPC(int pid) {
+            CheckConnected();
+
+            SendCMDPacket(CMDS.CMD_PROC_INTALL, CMD_PROC_INSTALL_PACKET_SIZE, pid);
+            CheckStatus();
+
+            return BitConverter.ToUInt64(ReceiveData(PROC_INSTALL_SIZE), 0);
+        }
+
+        /// <summary>
         /// Load elf
         /// </summary>
         /// <param name="pid">Process ID</param>
@@ -278,34 +347,43 @@ namespace libdebug {
             LoadElf(pid, File.ReadAllBytes(filename));
         }
 
-        public enum ScanValueType : byte {
-            valTypeUInt8 = 0,
-            valTypeInt8,
-            valTypeUInt16,
-            valTypeInt16,
-            valTypeUInt32,
-            valTypeInt32,
-            valTypeUInt64,
-            valTypeInt64,
-            valTypeFloat,
-            valTypeDouble,
-            valTypeArrBytes,
-            valTypeString
+        /// <summary>
+        /// Read memory
+        /// </summary>
+        /// <param name="pid">Process ID</param>
+        /// <param name="address">Memory address</param>
+        /// <param name="length">Data length</param>
+        /// <returns></returns>
+        public byte[] ReadMemory(int pid, ulong address, int length) {
+            CheckConnected();
+
+            SendCMDPacket(CMDS.CMD_PROC_READ, CMD_PROC_READ_PACKET_SIZE, pid, address, length);
+            CheckStatus();
+            return ReceiveData(length);
         }
 
-        public enum ScanCompareType : byte {
-            ExactValue = 0,
-            FuzzyValue,
-            BiggerThan,
-            SmallerThan,
-            ValueBetween,
-            IncreasedValue,
-            IncreasedValueBy,
-            DecreasedValue,
-            DecreasedValueBy,
-            ChangedValue,
-            UnchangedValue,
-            UnknownInitialValue
+        public T ReadMemory<T>(int pid, ulong address) {
+            if (typeof(T) == typeof(string)) {
+                string str = "";
+                ulong i = 0;
+
+                while (true) {
+                    byte value = ReadMemory(pid, address + i, sizeof(byte))[0];
+                    if (value == 0) {
+                        break;
+                    }
+                    str += Convert.ToChar(value);
+                    i++;
+                }
+
+                return (T)(object)str;
+            }
+
+            if (typeof(T) == typeof(byte[])) {
+                throw new NotSupportedException("byte arrays are not supported, use ReadMemory(int pid, ulong address, int size)");
+            }
+
+            return (T)GetObjectFromBytes(ReadMemory(pid, address, Marshal.SizeOf(typeof(T))), typeof(T));
         }
 
         public List<ulong> ScanProcess<T>(int pid, ScanCompareType compareType, T value, T extraValue = default) {
@@ -450,87 +528,19 @@ namespace libdebug {
         }
 
         /// <summary>
-        /// Changes protection on pages in range
+        /// Write memory
         /// </summary>
         /// <param name="pid">Process ID</param>
-        /// <param name="address">Address</param>
-        /// <param name="length">Length</param>
-        /// <param name="newprot">New protection</param>
-        /// <returns></returns>
-        public void ChangeProtection(int pid, ulong address, uint length, VM_PROTECTIONS newProt) {
+        /// <param name="address">Memory address</param>
+        /// <param name="data">Data</param>
+        public void WriteMemory(int pid, ulong address, byte[] data) {
             CheckConnected();
 
-            SendCMDPacket(CMDS.CMD_PROC_PROTECT, CMD_PROC_PROTECT_PACKET_SIZE, pid, address, length, (uint)newProt);
+            SendCMDPacket(CMDS.CMD_PROC_WRITE, CMD_PROC_WRITE_PACKET_SIZE, pid, address, data.Length);
+            CheckStatus();
+            SendData(data, data.Length);
             CheckStatus();
         }
-
-        /// <summary>
-        /// Get process information
-        /// </summary>
-        /// <param name="pid">Process ID</param>
-        /// <returns></returns>
-        public ProcessInfo GetProcessInfo(int pid) {
-            CheckConnected();
-
-            SendCMDPacket(CMDS.CMD_PROC_INFO, CMD_PROC_INFO_PACKET_SIZE, pid);
-            CheckStatus();
-
-            byte[] data = ReceiveData(PROC_PROC_INFO_SIZE);
-            return (ProcessInfo)GetObjectFromBytes(data, typeof(ProcessInfo));
-        }
-
-        /// <summary>
-        /// Allocate RWX memory in the process space
-        /// </summary>
-        /// <param name="pid">Process ID</param>
-        /// <param name="length">Size of memory allocation</param>
-        /// <returns></returns>
-        public ulong AllocateMemory(int pid, int length) {
-            CheckConnected();
-
-            SendCMDPacket(CMDS.CMD_PROC_ALLOC, CMD_PROC_ALLOC_PACKET_SIZE, pid, length);
-            CheckStatus();
-            return BitConverter.ToUInt64(ReceiveData(PROC_ALLOC_SIZE), 0);
-        }
-
-        /// <summary>
-        /// Free memory in the process space
-        /// </summary>
-        /// <param name="pid">Process ID</param>
-        /// <param name="address">Address of the memory allocation</param>
-        /// <param name="length">Size of memory allocation</param>
-        /// <returns></returns>
-        public void FreeMemory(int pid, ulong address, int length) {
-            CheckConnected();
-
-            SendCMDPacket(CMDS.CMD_PROC_FREE, CMD_PROC_FREE_PACKET_SIZE, pid, address, length);
-            CheckStatus();
-        }
-
-        public T ReadMemory<T>(int pid, ulong address) {
-            if (typeof(T) == typeof(string)) {
-                string str = "";
-                ulong i = 0;
-
-                while (true) {
-                    byte value = ReadMemory(pid, address + i, sizeof(byte))[0];
-                    if (value == 0) {
-                        break;
-                    }
-                    str += Convert.ToChar(value);
-                    i++;
-                }
-
-                return (T)(object)str;
-            }
-
-            if (typeof(T) == typeof(byte[])) {
-                throw new NotSupportedException("byte arrays are not supported, use ReadMemory(int pid, ulong address, int size)");
-            }
-
-            return (T)GetObjectFromBytes(ReadMemory(pid, address, Marshal.SizeOf(typeof(T))), typeof(T));
-        }
-
         public void WriteMemory<T>(int pid, ulong address, T value) {
             if (typeof(T) == typeof(string)) {
                 WriteMemory(pid, address, Encoding.ASCII.GetBytes((string)(object)value + (char)0x0));
